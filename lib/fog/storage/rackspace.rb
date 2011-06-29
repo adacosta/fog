@@ -3,7 +3,7 @@ module Fog
     class Rackspace < Fog::Service
 
       requires :rackspace_api_key, :rackspace_username
-      recognizes :rackspace_auth_url, :rackspace_servicenet, :rackspace_cdn_ssl, :persistent, :enable_cdn
+      recognizes :rackspace_auth_url, :rackspace_servicenet, :rackspace_cdn_ssl, :persistent, :disable_cdb
 
       model_path 'fog/storage/models/rackspace'
       model       :directory
@@ -27,7 +27,7 @@ module Fog
       module Utils
 
         def cdn
-          return nil unless @enable_cdn
+          return nil if @disable_cdb
           @cdn ||= Fog::CDN.new(
             :provider           => 'Rackspace',
             :rackspace_api_key  => @rackspace_api_key,
@@ -76,7 +76,7 @@ module Fog
           @rackspace_api_key = options[:rackspace_api_key]
           @rackspace_username = options[:rackspace_username]
           @rackspace_cdn_ssl = options[:rackspace_cdn_ssl]
-          @enable_cdn = options[:enable_cdn]
+          @disable_cdn = options[:disable_cdn]
           credentials = Fog::Rackspace.authenticate(options)
           @auth_token = credentials['X-Auth-Token']
 

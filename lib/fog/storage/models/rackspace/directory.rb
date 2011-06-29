@@ -55,11 +55,13 @@ module Fog
         def save
           requires :key
           connection.put_container(key)
-          if @public
-            @public_url = connection.cdn.put_container(key, 'X-CDN-Enabled' => 'True').headers['X-CDN-URI']
-          else
-            connection.cdn.put_container(key, 'X-CDN-Enabled' => 'False')
-            @public_url = nil
+          if connection.cdn
+            if @public
+              @public_url = connection.cdn.put_container(key, 'X-CDN-Enabled' => 'True').headers['X-CDN-URI']
+            else
+              connection.cdn.put_container(key, 'X-CDN-Enabled' => 'False')
+              @public_url = nil
+            end
           end
           true
         end

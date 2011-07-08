@@ -32,6 +32,9 @@ module Fog
       when :ninefold
         require 'fog/compute/ninefold'
         Fog::Compute::Ninefold.new(attributes)
+      when :openstack
+        require 'fog/compute/openstack'
+        Fog::Compute::OpenStack.new(attributes)
       when :rackspace
         require 'fog/compute/rackspace'
         Fog::Compute::Rackspace.new(attributes)
@@ -54,7 +57,7 @@ module Fog
 
     def self.servers
       servers = []
-      for provider in [:aws, :bluebox, :brightbox, :ecloud, :gogrid, :linode, :newservers, :ninefold, :rackspace, :slicehost, :stormondemand, :virtualbox, :voxel]
+      for provider in [:aws, :bluebox, :brightbox, :ecloud, :gogrid, :linode, :newservers, :ninefold, :openstack, :rackspace, :slicehost, :stormondemand, :virtualbox, :voxel]
         begin
           servers.concat(self[provider].servers)
         rescue # ignore any missing credentials/etc

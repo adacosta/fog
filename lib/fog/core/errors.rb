@@ -44,6 +44,9 @@ An alternate file may be used by placing its path in the FOG_RC environment vari
   :local_root:
   :new_servers_password:
   :new_servers_username:
+  :openstack_auth_user:
+  :openstack_auth_key:
+  :openstack_auth_url:
   :public_key_path:
   :private_key_path:
   :rackspace_api_key:

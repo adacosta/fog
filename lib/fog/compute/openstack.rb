@@ -63,6 +63,21 @@ module Fog
           version_backends[rv]
         end
 
+        def extension_service
+          unless @extension_service
+            rv = OpenStackExtensions
+            rv.setup_requirements
+            if Fog.mocking?
+              rv::Mock.send(:include, rv::Collections)
+              inst = rv::Mock.new
+            else
+              rv::Real.send(:include, rv::Collections)
+              inst = rv::Real.new(:requestor => self)
+            end
+          end
+          inst
+        end
+
         def versions
           {
             '1.0' => OpenStack_1_0,
@@ -117,6 +132,9 @@ module Fog
         def method_missing name, *args
           if versioned_service.respond_to?(name)
             versioned_service.send(name, *args)
+          elsif versioned_service.service.supports_extensions? \
+          and extension_service.respond_to?(name)
+            extension_service.send(name, *args)
           else
             super
           end
@@ -188,6 +206,101 @@ module Fog
       request :server_action
       request :update_server
 
+      def self.supports_extensions? ; false ; end
+
+      class Mock ; end
+      class Real
+        def initialize options={}
+          @requestor = options[:requestor]
+        end
+
+        def request params
+          @requestor.request params
+        end
+
+      end
+    end # 1.0
+
+    class OpenStack_1_1 < Fog::Service
+      model_path 'fog/compute/models/openstack/openstack_1_1'
+      model       :flavor
+      collection  :flavors
+      model       :image
+      collection  :images
+      model       :server
+      collection  :servers
+      model       :extension
+      collection  :extensions
+
+      request_path 'fog/compute/requests/openstack/openstack_1_1'
+      request :confirm_resized_server
+      request :create_image
+      request :create_server
+      request :delete_image
+      request :delete_server
+      request :get_flavor_details
+      request :get_image_details
+      request :get_server_details
+      request :list_addresses
+      request :list_private_addresses
+      request :list_public_addresses
+      request :list_flavors
+      request :list_flavors_detail
+      request :list_images
+      request :list_images_detail
+      request :list_servers
+      request :list_servers_detail
+      request :reboot_server
+      request :revert_resized_server
+      request :resize_server
+      request :server_action
+      request :update_server
+      request :list_extensions
+
+      # move these to core/service.rb?
+
+      def self.extension_path pth
+        @extension_path = pth
+        @supports_extensions = true
+      end
+      extension_path 'fog/compute/extensions/openstack'
+
+      def self.supports_extensions?
+        @supports_extensions
+      end
+
+      def self.load_extension name
+        begin
+          require "#{@extension_path}/#{name.downcase.gsub('-', '_')}"
+        rescue LoadError
+          # simply not supported, don't error out
+          nil
+        end
+      end
+
+      class Mock ; end
+      class Real
+        def initialize options={}
+          @requestor = options[:requestor]
+          load_extensions
+        end
+
+        def request params
+          @requestor.request params
+        end
+
+        private
+
+        def load_extensions
+          list_extensions.body['extensions'].each do |ext|
+            service.load_extension(ext['alias'])
+          end
+        end
+      end
+    end # 1.1
+
+    # This is a version independent service that handles extensions.
+    class OpenStackExtensions < Fog::Service
       class Mock ; end
       class Real
         def initialize options={}
@@ -198,10 +311,7 @@ module Fog
           @requestor.request params
         end
       end
-    end # 1.0
-
-    class OpenStack_1_1 < Fog::Service
-    end # 1.1
+    end
 
   end # compute
 end # fog
